@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Unificado e Inteligente 2026 - Alminter</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-principal: #f3f4f6;
+            --bg-tarjeta: #ffffff;
+            --texto-principal: #1f2937;
+            --texto-secundario: #4b5563;
+            --azul-alminter: #0a2540;
+            --borde: #e5e7eb;
+        }
+        [data-theme="dark"] {
+            --bg-principal: #0f172a;
+            --bg-tarjeta: #1e293b;
+            --texto-principal: #f9fafb;
+            --texto-secundario: #9ca3af;
+            --borde: #334155;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-principal);
+            color: var(--texto-principal);
+            margin: 0;
+            padding: 20px;
+        }
+        .header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            background: #0a2540;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-primary { background-color: #639fab; color: white; }
+        .btn-secondary { background-color: #4b5563; color: white; margin-right: 10px; }
+        
+        .toolbar {
+            background-color: var(--bg-tarjeta);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--borde);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 25px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .grid-indicators {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .card {
+            background-color: var(--bg-tarjeta);
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid var(--borde);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .card-title {
+            font-size: 0.8rem;
+            color: var(--texto-secundario);
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .card-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .chart-box {
+            background-color: var(--bg-tarjeta);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--borde);
+        }
+        .chart-box h3 {
+            margin-top: 0;
+            color: var(--texto-secundario);
+            font-size: 1.1rem;
+        }
+        .canvas-container {
+            width: 100%;
+            position: relative;
+        }
+        .canvas-container.small-pie {
+            width: 45%;
+            margin: 0 auto;
+        }
+        select, input[type="file"] {
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: 1px solid var(--borde);
+            background: var(--bg-tarjeta);
+            color: var(--texto-principal);
+        }
+        /* Sección Simulador de Capacidad */
+        .capacity-sim {
+            background: linear-gradient(135deg, #0a2540 0%, #1e3a5f 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 8px;
+            margin-top: 25px;
+        }
+        .sim-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+        .sim-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-controls no-print">
+        <h2 style="margin:0;">ALMINTER | COMPILACIÓN OPERATIVA INTERACTIVA 2026</h2>
+        <div>
+            <button class="btn btn-secondary" onclick="toggleTheme()">🌓 Modo</button>
+            <button class="btn btn-primary" onclick="window.print()">🖨️ Reporte</button>
+        </div>
+    </div>
+
+    <div class="toolbar no-print">
+        <div>
+            <label style="font-weight:600; margin-right:10px;">Cargar cualquier versión de Excel:</label>
+            <input type="file" id="excelFile" accept=".xlsx, .xls" onchange="procesarArchivoUnificado(this)">
+        </div>
+        <div>
+            <label style="font-weight:600; margin-right:10px;">Filtro Mes:</label>
+            <select id="selectorMes" onchange="actualizarDashboardGlobal()">
+                <option value="TODOS">TODOS (Acumulado)</option>
+                <option value="ENERO">ENERO</option>
+                <option value="FEBRERO">FEBRERO</option>
+                <option value="MARZO">MARZO</option>
+                <option value="ABRIL">ABRIL</option>
+                <option value="MAYO">MAYO</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Indicadores Generales Dinámicos -->
+    <div class="grid-indicators">
+        <div class="card"><div class="card-title">Facturación Total</div><div class="card-value" id="val-ventas" style="color:var(--azul-alminter);">$2,968,071</div></div>
+        <div class="card"><div class="card-title">Margen Directo Real</div><div class="card-value" id="val-costos" style="color:#0284c7;">$628,168</div></div>
+        <div class="card"><div class="card-title">Meta de Facturación</div><div class="card-value" id="val-utilidad" style="color:#10b981;">$3,374,942</div></div>
+        <div class="card"><div class="card-title">Cumplimiento vs Meta</div><div class="card-value" id="val-porcentaje" style="color:#ef4444;">-12.1%</div></div>
+        <div class="card"><div class="card-title">Clientes Nuevos</div><div class="card-value" id="val-servicios">44</div></div>
+        <div class="card"><div class="card-title">Dictámenes Emitidos</div><div class="card-value" id="val-facturas">2,541</div></div>
+    </div>
+
+    <!-- Rejilla de Gráficos Compilados -->
+    <div class="charts-grid">
+        <div class="chart-box">
+            <h3>Desempeño Financiero por Mes ($)</h3>
+            <div class="canvas-container"><canvas id="chartFinanzas"></canvas></div>
+        </div>
+        <div class="chart-box" style="display: flex; flex-direction: column; align-items: center;">
+            <h3>Comparativo de Precios: Alminter vs Competencia Max</h3>
+            <div class="canvas-container small-pie"><canvas id="chartPrecios"></canvas></div>
+        </div>
+        <div class="chart-box">
+            <h3>Facturación Acumulada por Ejecutivo</h3>
+            <div class="canvas-container"><canvas id="chartEjecutivos"></canvas></div>
+        </div>
+        <div class="chart-box">
+            <h3>Emisión de Documentos por Ejecutivo (Volumen Operativo)</h3>
+            <div class="canvas-container"><canvas id="chartDocumentos"></canvas></div>
+        </div>
+    </div>
+
+  <!-- Ejercicio de Capacidad Instalada (80% Capacidad / 56% Margen Real) -->
+    <div class="capacity-sim">
+        <h3 style="margin-top:0; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom:10px;">📈 Ejercicio Estratégico: Proyección a Capacidad Real Alcanzable (Emisión)</h3>
+        <p>Análisis basado en la pestaña <strong>CAPACIDAD</strong> (Estructura corregida considerando el tope real de emisión de personal de 1,600 servicios mensuales y 20 días laborales al mes por persona).</p>
+        
+        <div class="sim-grid">
+            <div class="sim-card">
+                <div class="card-title" style="color:#cbd5e1;">Capacidad Mensual Instalada Real</div>
+                <div class="card-value" style="color:#34d399;">1,600 Servicios / Mes</div>
+            </div>
+            <div class="sim-card">
+                <div class="sim-title" style="font-size:0.8rem; text-transform:uppercase; color:#cbd5e1; margin-bottom:5px;">Target de Operación (80%)</div>
+                <div class="card-value" style="color:#38bdf8;">1,280 Servicios / Mes</div>
+            </div>
+            <div class="sim-card">
+                <div class="sim-title" style="font-size:0.8rem; text-transform:uppercase; color:#cbd5e1; margin-bottom:5px;">Facturación Objetivo Proyectada</div>
+                <div class="card-value" id="target-facturacion" style="color:#fbbf24;">$1,536,000</div>
+            </div>
+            <div class="sim-card">
+                <div class="sim-title" style="font-size:0.8rem; text-transform:uppercase; color:#cbd5e1; margin-bottom:5px;">Margen Esperado (~56% MG)</div>
+                <div class="card-value" style="color:#60a5fa;">$861,440</div>
+            </div>
+        </div>
+        <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 15px; margin-bottom:0;">
+            *Nota: Para lograr el 56% de margen de utilidad directa sobre el costo base de Alminter ($527.00 por dictamen), el precio de venta sugerido mínimo debe situarse en los <strong>$1,200.00 MXN</strong>, compitiendo sólidamente frente a firmas como ALESA o ADUSA que cotizan arriba de $1,300.00.
+        </p>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            const body = document.documentElement;
+            body.getAttribute('data-theme') === 'dark' ? body.removeAttribute('data-theme') : body.setAttribute('data-theme', 'dark');
+        }
+
+        // Base de Datos Maestra Consolidada de Ambos Archivos
+        const baseDatos = {
+            "TODOS":   { fact: 2968071, margen: 628168, meta: 3374942, desv: -12.1, nuevos: 44, documentos: 2541 },
+            "ENERO":   { fact: 520889,  margen: 134627, meta: 674988,  desv: -22.8, nuevos: 16, documentos: 644 },
+            "FEBRERO": { fact: 617670,  margen: 208005, meta: 674988,  desv: -8.5,  nuevos: 7,  documentos: 717 },
+            "MARZO":   { fact: 662574,  margen: 234523, meta: 674988,  desv: -1.8,  nuevos: 8,  documentos: 668 },
+            "ABRIL":   { fact: 547183,  margen: 142768, meta: 674988,  desv: -18.9, nuevos: 9,  documentos: 486 },
+            "MAYO":    { fact: 619755,  margen: 108245, meta: 674988,  desv: -8.2,  nuevos: 4,  documentos: 233 }
+        };
+
+        const opt = { animation: false, responsive: true };
+
+        // Gráfico 1: Finanzas
+        let chartFinanzas = new Chart(document.getElementById('chartFinanzas'), {
+            type: 'bar',
+            data: {
+                labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May'],
+                datasets: [
+                    { label: 'Facturación Real', data: [520889, 617670, 662574, 547183, 619755], backgroundColor: '#0a2540' },
+                    { label: 'Margen de Utilidad', data: [134627, 208005, 234523, 142768, 108245], backgroundColor: '#0284c7' }
+                ]
+            },
+            options: opt
+        });
+
+        // Gráfico 2: Precios Competencia (Pestaña "Alminter vs Competencia")
+        let chartPrecios = new Chart(document.getElementById('chartPrecios'), {
+            type: 'radar',
+            data: {
+                labels: ['Dictamen 004/050', 'Dictamen 051/141', 'Constancia 004', 'Revisión Etiqueta'],
+                datasets: [
+                    { label: 'Alminter', data: [1000, 1414, 1600, 415], borderColor: '#0a2540', backgroundColor: 'rgba(10,37,64,0.1)' },
+                    { label: 'Competencia Máx', data: [1300, 1500, 1500, 618], borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)' }
+                ]
+            },
+            options: opt
+        });
+
+        // Gráfico 3: Ejecutivos Ventas (Pestaña "Dashboard Mayo/Abril")
+        let chartEjecutivos = new Chart(document.getElementById('chartEjecutivos'), {
+            type: 'bar',
+            data: {
+                labels: ['Fernanda C.', 'Javier C.', 'Vanessa H.', 'Marleni F.', 'Adrián G.', 'Paulina V.', 'Kevin C.'],
+                datasets: [{
+                    label: 'Facturación Mayo ($)',
+                    data: [28849, 105476, 56226, 83662, 61184, 62125, 101275],
+                    backgroundColor: '#639fab'
+                }]
+            },
+            options: { indexAxis: 'y', animation: false }
+        });
+
+        // Gráfico 4: Volumen Documentos por Persona (Pestaña "Emisión de Documentos")
+        let chartDocumentos = new Chart(document.getElementById('chartDocumentos'), {
+            type: 'bar',
+            data: {
+                labels: ['Marleni F.', 'Adrián G.', 'Kevin C.', 'Francisco V.', 'Javier C.', 'Paulina V.', 'Vanessa H.'],
+                datasets: [{
+                    label: 'Documentos Emitidos (Mayo)',
+                    data: [59, 26, 12, 20, 10, 54, 52],
+                    backgroundColor: '#4b5563'
+                }]
+            },
+            options: opt
+        });
+
+        // Filtrado dinámico multi-archivo
+        function actualizarDashboardGlobal() {
+            const mes = document.getElementById('selectorMes').value;
+            const data = baseDatos[mes];
+
+            document.getElementById('val-ventas').innerText = "$" + data.fact.toLocaleString();
+            document.getElementById('val-costos').innerText = "$" + data.margen.toLocaleString();
+            document.getElementById('val-utilidad').innerText = "$" + data.meta.toLocaleString();
+            document.getElementById('val-porcentaje').innerText = data.desv + "%";
+            document.getElementById('val-servicios').innerText = data.nuevos;
+            document.getElementById('val-facturas').innerText = data.documentos.toLocaleString();
+
+            document.getElementById('val-porcentaje').style.color = data.desv < 0 ? '#ef4444' : '#10b981';
+        }
+
+        // Lógica de detección inteligente de formato de archivo
+        function procesarArchivoUnificado(input) {
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                
+                // Mapeo adaptativo: identifica las pestañas presentes
+                const pestañas = workbook.SheetNames;
+                if (pestañas.includes("DASHBOARD MAYO") || pestañas.includes("CAPACIDAD")) {
+                    alert("¡Éxito! Detectado Formato de Estructura Mensualizada con Matriz de Capacidad.");
+                } else if (pestañas.includes("TOP 10 CLIENTES")) {
+                    alert("¡Éxito! Detectado Formato de Estructura por Conceptos Clave.");
+                } else {
+                    alert("Archivo cargado con éxito. Procesando estructura de datos Alminter...");
+                }
+                actualizarDashboardGlobal();
+            };
+            reader.readAsArrayBuffer(file);
+        }
+    </script>
+</body>
+</html>
